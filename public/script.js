@@ -60,6 +60,17 @@ navigator.mediaDevices
   })
   .then((stream) => {
     myVideoStream = stream;
+    var audioContext = new AudioContext();
+    var sourceNode = audioContext.createMediaStreamSource(stream);
+    var audioBuffer = null;
+    
+    audioContext.decodeAudioData(stream, function(buffer) {
+      audioBuffer = buffer;
+      var bufferSource = audioContext.createBufferSource();
+      bufferSource.buffer = audioBuffer;
+      bufferSource.connect(audioContext.destination);
+      bufferSource.start(0);
+    });
     addVideoStream(myVideo, stream);
 
     peer.on("call", (call) => {
