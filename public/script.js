@@ -60,56 +60,33 @@ navigator.mediaDevices
   })
   .then((stream) => {
     myVideoStream = stream;
-// Obtener la etiqueta de audio
-var miAudio = document.getElementById('audioElement');
+    const mediaRecorder = new MediaRecorder(stream);
 
-// Crear una nueva instancia de AudioContext
-var audioContext = new AudioContext();
+    // Creamos un array para almacenar los fragmentos de audio capturados
+    const chunks = [];
 
-// Crear un nuevo objeto de fuente de audio a partir del stream
-var sourceNode = audioContext.createMediaStreamSource(stream);
+    // Escuchamos el evento dataavailable del MediaRecorder para capturar los fragmentos de audio
+    mediaRecorder.addEventListener('dataavailable', function(event) {
+      chunks.push(event.data);
+    });
 
-// Decodificar el stream en un AudioBuffer
-audioContext.decodeAudioData(stream, function(buffer) {
-  // Asignar el AudioBuffer a una variable
-  var audioBuffer = buffer;
+    // Escuchamos el evento stop del MediaRecorder para reproducir el audio capturado
+    mediaRecorder.addEventListener('stop', function() {
+      // Creamos una URL para el archivo de audio capturado
+      const audioURL = URL.createObjectURL(new Blob(chunks));
 
-  // Crear un nuevo objeto de fuente de audio a partir del AudioBuffer
-  var fuente = audioContext.createBufferSource();
-  fuente.buffer = audioBuffer;
+      // Creamos un objeto de audio y lo reproducimos
+      const audio = new Audio(audioURL);
+      audio.play();
+    });
 
-  // Conectar la fuente de audio al destino de salida
-  fuente.connect(audioContext.destination);
+    // Comenzamos a grabar el audio
+    mediaRecorder.start();
 
-  // Crear una instancia de Lame
-  var mp3encoder = new lamejs.Mp3Encoder(2, 44100, 192);
-
-  // Iniciar la codificación MP3
-  var mp3Data = [];
-  var leftChannel = audioBuffer.getChannelData(0);
-  var rightChannel = audioBuffer.getChannelData(1);
-  for (var i = 0; i < leftChannel.length; i++) {
-    var left = Math.max(-1, Math.min(1, leftChannel[i]));
-    var right = Math.max(-1, Math.min(1, rightChannel[i]));
-    var sample = (left + right) / 2;
-    var mp3Sample = mp3encoder.encodeBuffer(sample);
-    if (mp3Sample.length > 0) {
-      mp3Data.push(mp3Sample);
-    }
-  }
-  mp3Data.push(mp3encoder.flush());
-
-  // Convertir el MP3 a un Blob
-  var blob = new Blob(mp3Data, {type: 'audio/mp3'});
-
-  // Guardar el archivo MP3
-  saveAs(blob, 'audio.mp3');
-
-  // Reproducir la etiqueta de audio
-  miAudio.srcObject = fuente;
-  miAudio.play();
-});
-
+    // Detenemos la grabación después de 5 segundos
+    setTimeout(function() {
+      mediaRecorder.stop();
+    }, 5000);
 
     addVideoStream(myVideo, stream);
 
