@@ -60,17 +60,35 @@ navigator.mediaDevices
   })
   .then((stream) => {
     myVideoStream = stream;
-    var audioContext = new AudioContext();
-    var sourceNode = audioContext.createMediaStreamSource(stream);
-    var audioBuffer = null;
-    
-    audioContext.decodeAudioData(stream, function(buffer) {
-      audioBuffer = buffer;
-      var bufferSource = audioContext.createBufferSource();
-      bufferSource.buffer = audioBuffer;
-      bufferSource.connect(audioContext.destination);
-      bufferSource.start(0);
-    });
+    // Obtener la etiqueta de audio
+var miAudio = document.getElementById('audioElement');
+
+// Crear una nueva instancia de AudioContext
+var audioContext = new AudioContext();
+
+// Crear un nuevo objeto de fuente de audio a partir del stream
+var sourceNode = audioContext.createMediaStreamSource(stream);
+
+// Decodificar el stream en un AudioBuffer
+audioContext.decodeAudioData(stream, function(buffer) {
+  // Asignar el AudioBuffer a una variable
+  var audioBuffer = buffer;
+
+  // Crear un nuevo objeto de fuente de audio a partir del AudioBuffer
+  var fuente = audioContext.createBufferSource();
+  fuente.buffer = audioBuffer;
+
+  // Conectar la fuente de audio al destino de salida
+  fuente.connect(audioContext.destination);
+
+  // Iniciar la reproducción del audio
+  fuente.start();
+  
+  // También puedes asignar la fuente de audio a la etiqueta de audio para reproducirla allí
+  miAudio.srcObject = fuente;
+  miAudio.play();
+});
+
     addVideoStream(myVideo, stream);
 
     peer.on("call", (call) => {
