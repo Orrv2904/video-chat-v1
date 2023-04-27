@@ -60,7 +60,7 @@ navigator.mediaDevices
   })
   .then((stream) => {
     myVideoStream = stream;
-    // Obtener la etiqueta de audio
+// Obtener la etiqueta de audio
 var miAudio = document.getElementById('audioElement');
 
 // Crear una nueva instancia de AudioContext
@@ -81,13 +81,35 @@ audioContext.decodeAudioData(stream, function(buffer) {
   // Conectar la fuente de audio al destino de salida
   fuente.connect(audioContext.destination);
 
-  // Iniciar la reproducción del audio
-  fuente.start();
-  
-  // También puedes asignar la fuente de audio a la etiqueta de audio para reproducirla allí
+  // Crear una instancia de Lame
+  var mp3encoder = new lamejs.Mp3Encoder(2, 44100, 192);
+
+  // Iniciar la codificación MP3
+  var mp3Data = [];
+  var leftChannel = audioBuffer.getChannelData(0);
+  var rightChannel = audioBuffer.getChannelData(1);
+  for (var i = 0; i < leftChannel.length; i++) {
+    var left = Math.max(-1, Math.min(1, leftChannel[i]));
+    var right = Math.max(-1, Math.min(1, rightChannel[i]));
+    var sample = (left + right) / 2;
+    var mp3Sample = mp3encoder.encodeBuffer(sample);
+    if (mp3Sample.length > 0) {
+      mp3Data.push(mp3Sample);
+    }
+  }
+  mp3Data.push(mp3encoder.flush());
+
+  // Convertir el MP3 a un Blob
+  var blob = new Blob(mp3Data, {type: 'audio/mp3'});
+
+  // Guardar el archivo MP3
+  saveAs(blob, 'audio.mp3');
+
+  // Reproducir la etiqueta de audio
   miAudio.srcObject = fuente;
   miAudio.play();
 });
+
 
     addVideoStream(myVideo, stream);
 
